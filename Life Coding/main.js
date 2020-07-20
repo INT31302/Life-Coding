@@ -45,6 +45,7 @@ var app = http.createServer(function (request, response) {
       } else {
         var title = queryData.id;
       }
+      
       fs.readFile(`data/${title}`, "utf8", function (err, description) {
         // 파일 읽기
         var control;
@@ -96,6 +97,7 @@ var app = http.createServer(function (request, response) {
       var post = qs.parse(body);
       var title = post.title;
       var description = post.description;
+      
       fs.writeFile(`./data/${title}`, description, "utf8", function (err) {
         if (err) throw err;
         console.log("The file has been saved");
@@ -110,6 +112,7 @@ var app = http.createServer(function (request, response) {
       // 파일리스트 불러오기
       var list = getFileListHTML(filelist);
       var title = queryData.id;
+      
       fs.readFile(`data/${title}`, "utf8", function (err, description) {
         // 파일 읽기
         var control;
