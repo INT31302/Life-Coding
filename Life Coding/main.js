@@ -55,7 +55,11 @@ var app = http.createServer(function (request, response) {
           control = `<a href="/create">create</a>`;
         } else {
           control = `<a href="/create">create</a>
-          <a href="/update?id=${title}">update</a>`;
+          <a href="/update?id=${title}">update</a>
+          <form action="delete_process" method="post">
+            <input type="hidden" name="id" value="${title}">
+            <input type="submit" value="delete">
+          </form>`;
         }
         var template = templateHTML(title, list, body, control);
         response.writeHead(200);
@@ -118,7 +122,11 @@ var app = http.createServer(function (request, response) {
         `;
 
         control = `<a href="/create">create</a>
-          <a href="/update?id=${title}">update</a>`;
+          <a href="/update?id=${title}">update</a>
+          <form action="delete_process" method="post">
+            <input type="hidden" name="id" value="${title}">
+            <input type="submit" value="delete">
+          </form>`;
         var template = templateHTML(title, list, body, control);
         response.writeHead(200);
         response.end(template); // 최종적으로 전송할 데이터
@@ -145,6 +153,22 @@ var app = http.createServer(function (request, response) {
           });
           response.end();
         });
+      });
+    });
+  } else if (pathname == "/delete_process") {
+    var body = "";
+    request.on("data", function (data) {
+      // 데이터 수신할 때 작동하는 이벤트
+      body += data;
+    });
+    request.on("end", function () {
+      // 데이터 수신이 끝났을 경우 작동하는 이벤트
+      var post = qs.parse(body);
+      var id = post.id;
+      fs.unlink(`data/${id}`, function (err) {
+        if (err) throw err;
+        response.writeHead(302, { Location: `/` });
+        response.end();
       });
     });
   } else {
