@@ -2,34 +2,9 @@ var http = require("http");
 var fs = require("fs");
 var url = require("url");
 var qs = require("querystring");
-
-var template = {
-  html: function (title, list, body, control) {
-    return `
-  <!doctype html>
-<html>
-<head>
-  <title>WEB1 - ${title}</title>
-  <meta charset="utf-8">
-</head>
-<body>
-  <h1><a href="/">WEB</a></h1>
-  ${list}
-  ${control}
-  ${body}
-</body>
-</html>
-  `;
-  },
-  list: function (filelist) {
-    var list = "<ul>";
-    for (var i = 0; i < filelist.length; i++) {
-      list += `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
-    }
-    list += "</ul>";
-    return list;
-  },
-};
+var template = require("./lib/template");
+var path = require("path");
+var sanitizeHtml = require("sanitize-html");
 
 var app = http.createServer(function (request, response) {
   var _url = request.url;
@@ -37,37 +12,48 @@ var app = http.createServer(function (request, response) {
   var pathname = url.parse(_url, true).pathname;
 
   if (pathname === "/") {
-    fs.readdir("./data", function (err, filelist) {
-      // 파일리스트 불러오기
-      var list = template.list(filelist);
-      if (queryData.id === undefined) {
-        // Home인 경우
+    if (queryData.id === undefined) {
+      fs.readdir("./data", function (err, filelist) {
+        // 파일리스트 불러오기
         var title = "Welcome";
-      } else {
-        var title = queryData.id;
-      }
-
-      fs.readFile(`data/${title}`, "utf8", function (err, description) {
-        // 파일 읽기
-        var control;
-
-        if (queryData.id === undefined) {
-          description = "Hello, Node.js";
-          control = `<a href="/create">create</a>`;
-        } else {
-          control = `<a href="/create">create</a>
-          <a href="/update?id=${title}">update</a>
-          <form action="delete_process" method="post">
-            <input type="hidden" name="id" value="${title}">
-            <input type="submit" value="delete">
-          </form>`;
-        }
-        var body = `<h2>${title}</h2><p>${description}</p>`;
-        var html = template.html(title, list, body, control);
+        var description = "Hello, Node.js";
+        var list = template.list(filelist);
+        var html = template.html(
+          title,
+          list,
+          body,
+          `<a href="/create">create</a>`
+        );
         response.writeHead(200);
         response.end(html); // 최종적으로 전송할 데이터
       });
-    });
+    } else {
+      fs.readdir("./data", function (err, filelist) {
+        // 파일리스트 불러오기
+        var filteredId = path.parse(queryData.id).base;
+        fs.readFile(`data/${filteredId}`, "utf8", function (err, description) {
+          // 파일 읽기
+          var title = queryData.id;
+          var sanitizedTitle = sanitizeHtml(title);
+          var sanitizedDescription = sanitizeHtml(description);
+          var list = template.list(filelist);
+          var body = `<h2>${sanitizedTitle}</h2><p>${sanitizedDescription}</p>`;
+          var html = template.html(
+            sanitizedTitle,
+            list,
+            body,
+            `<a href="/create">create</a>
+      <a href="/update?id=${sanitizedTitle}">update</a>
+      <form action="delete_process" method="post">
+      <input type="hidden" name="id" value="${sanitizedTitle}">
+      <input type="submit" value="delete">
+      </form>`
+          );
+          response.writeHead(200);
+          response.end(html); // 최종적으로 전송할 데이터
+        });
+      });
+    }
   } else if (pathname === "/create") {
     fs.readdir("./data", function (err, filelist) {
       // 파일리스트 불러오기
@@ -103,7 +89,7 @@ var app = http.createServer(function (request, response) {
         if (err) throw err;
         console.log("The file has been saved");
         response.writeHead(302, {
-          Location: `http://localhost:3000/?id=${title}`,
+          Location: `/?id=${title}`,
         });
         response.end();
       });
@@ -111,11 +97,11 @@ var app = http.createServer(function (request, response) {
   } else if (pathname === "/update") {
     fs.readdir("./data", function (err, filelist) {
       // 파일리스트 불러오기
-      var list = template.list(filelist);
-      var title = queryData.id;
-
-      fs.readFile(`data/${title}`, "utf8", function (err, description) {
+      var filteredId = path.parse(queryData.id).base;
+      fs.readFile(`data/${filteredId}`, "utf8", function (err, description) {
         // 파일 읽기
+        var title = queryData.id;
+        var list = template.list(filelist);
         var control;
         var body = `
         <form action="/update_process" method="post">
@@ -152,7 +138,7 @@ var app = http.createServer(function (request, response) {
           if (err) throw err;
           console.log("The file has been saved");
           response.writeHead(302, {
-            Location: `http://localhost:3000/?id=${title}`,
+            Location: `/?id=${title}`,
           });
           response.end();
         });
@@ -168,7 +154,8 @@ var app = http.createServer(function (request, response) {
       // 데이터 수신이 끝났을 경우 작동하는 이벤트
       var post = qs.parse(body);
       var id = post.id;
-      fs.unlink(`data/${id}`, function (err) {
+      var filteredId = path.parse(id).base;
+      fs.unlink(`data/${filteredId}`, function (err) {
         if (err) throw err;
         response.writeHead(302, { Location: `/` });
         response.end();
