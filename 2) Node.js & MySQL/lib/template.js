@@ -1,7 +1,7 @@
-const sanitize = require("sanitize-html");
 var sanitizeHTML = require("sanitize-html");
+var url = require("url");
 module.exports = {
-  html: function (title, list, body, control) {
+  html: function (title, search, list, body, control) {
     return `
     <!doctype html>
   <html>
@@ -13,7 +13,7 @@ module.exports = {
     <h1><a href="/">WEB</a></h1>
     <div>
     <a href="/author">author</a>
-    
+    ${search}
     </div>
     ${list}
     ${control}
@@ -64,5 +64,31 @@ module.exports = {
         `;
     }
     return tag;
+  },
+  searchForm: function (request) {
+    var _url = request.url;
+    var pathname = url.parse(_url, true).pathname;
+    var queryData = url.parse(_url, true).query;
+    var path = "";
+    var name = "title";
+    var value = "";
+    if (pathname.startsWith("/author")) {
+      path = "author/";
+      name = "name";
+      if (queryData.name !== undefined) {
+        value = queryData.name;
+      }
+    } else {
+      if (queryData.title !== undefined) {
+        value = queryData.title;
+      }
+    }
+
+    var form = `
+    <form action="/${path}search" method="get">
+    <input name="${name}" value="${value}">
+    <input type="submit" value="Search">
+  </form>`;
+    return form;
   },
 };

@@ -11,7 +11,14 @@ exports.home = function (request, response) {
     var description = "Hello, Node.js";
     var body = `<h2>${title}</h2><p>${description}</p>`;
     var list = template.topicList(topics);
-    var html = template.html(title, list, body, `<a href="/create">create</a>`);
+    var search = template.searchForm(request);
+    var html = template.html(
+      title,
+      search,
+      list,
+      body,
+      `<a href="/create">create</a>`
+    );
     response.writeHead(200);
     response.end(html); // 최종적으로 전송할 데이터
   });
@@ -30,11 +37,13 @@ exports.page = function (request, response) {
         var title = topic[0].title;
         var description = topic[0].description;
         var list = template.topicList(topics);
+        var search = template.searchForm(request);
         var body = `<h2>${sanitizeHTML(title)}</h2><p>${sanitizeHTML(
           description
         )}</p> by ${sanitizeHTML(topic[0].name)}`;
         var html = template.html(
           title,
+          search,
           list,
           body,
           `<a href="/create">create</a>
@@ -51,6 +60,25 @@ exports.page = function (request, response) {
   });
 };
 
+exports.search = function (request, response) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var sql = db.query(
+    `SELECT * FROM topic WHERE title LIKE ?`,
+    [queryData.title + "%"],
+    function (err, topics) {
+      if (err) throw err;
+      var title = "Search Result";
+      var list = template.topicList(topics);
+      var search = template.searchForm(request);
+      var body = `<h2>${sanitizeHTML(title)}</h2>`;
+      var html = template.html(title, search, body, list, ``);
+      response.writeHead(200);
+      response.end(html); // 최종적으로 전송할 데이터
+    }
+  );
+};
+
 exports.create = function (request, response) {
   db.query("SELECT * FROM topic", function (err, topics) {
     if (err) throw err;
@@ -58,8 +86,10 @@ exports.create = function (request, response) {
       if (err2) throw err2;
       var title = "Create";
       var list = template.topicList(topics);
+      var search = template.searchForm(request);
       var html = template.html(
         title,
+        search,
         list,
         `
             <form action="/create_process" method="post">
@@ -115,8 +145,10 @@ exports.update = function (request, response) {
       db.query("SELECT*FROM author", function (err3, authors) {
         if (err3) throw err3;
         var list = template.topicList(topics);
+        var search = template.searchForm(request);
         var html = template.html(
           sanitizeHTML(topic[0].title),
+          search,
           list,
           `
               <form action="/update_process" method="post">

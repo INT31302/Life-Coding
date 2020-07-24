@@ -34,10 +34,55 @@ exports.home = function (request, response) {
       <p><textarea name="profile" placeholder="profile"></textarea></p>
       <p><input type="submit" value="update"></p></form>`;
       var list = template.topicList(topics);
-      var html = template.html(title, list, control, body);
+      var search = template.searchForm(request);
+      var html = template.html(title, search, list, control, body);
       response.writeHead(200);
       response.end(html); // 최종적으로 전송할 데이터
     });
+  });
+};
+
+exports.search = function (request, response) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  db.query("SELECT * FROM topic", function (err, topics) {
+    if (err) throw err;
+    db.query(
+      "SELECT * FROM author WHERE name like ?",
+      [queryData.name + "%"],
+      function (err2, authors) {
+        var title = "Author List";
+        var table = `<table>
+      <tr>
+          <td>name</td>
+          <td>profile</td>
+          <td>update</td>
+          <td>delete</td>
+      </tr>
+      ${template.authorTable(authors)}
+    </table>
+    <style>
+      table{
+          border-collapse:collapse;
+      }
+      td{
+          border:1px solid black;
+          padding:3px;
+      }
+      </style>
+      `;
+        var body = `<h2>${sanitizeHTML(title)}</h2><p>${table}</p>`;
+        var control = `<form action="/author/create_process" method="post">
+      <p><input type="text" name="name" placeholder="name"></p>
+      <p><textarea name="profile" placeholder="profile"></textarea></p>
+      <p><input type="submit" value="update"></p></form>`;
+        var list = template.topicList(topics);
+        var search = template.searchForm(request);
+        var html = template.html(title, search, list, control, body);
+        response.writeHead(200);
+        response.end(html); // 최종적으로 전송할 데이터
+      }
+    );
   });
 };
 
@@ -107,7 +152,8 @@ exports.update = function (request, response) {
         <p><input type="submit" value="update"></p></form>`;
         var body = `<h2>${title}</h2><p>${table}</p>`;
         var list = template.topicList(topics);
-        var html = template.html(title, list, control, body);
+        var search = template.searchForm(request);
+        var html = template.html(title, search, list, control, body);
         response.writeHead(200);
         response.end(html); // 최종적으로 전송할 데이터
       });
