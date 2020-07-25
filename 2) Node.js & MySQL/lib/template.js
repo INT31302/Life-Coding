@@ -1,7 +1,7 @@
 var sanitizeHTML = require("sanitize-html");
 var url = require("url");
 module.exports = {
-  html: function (title, search, list, body, control) {
+  html: function (title, sort, search, list, body, control) {
     return `
     <!doctype html>
   <html>
@@ -13,6 +13,9 @@ module.exports = {
     <h1><a href="/">WEB</a></h1>
     <div>
     <a href="/author">author</a>
+    <form name ="sort">
+    ${sort}
+    </form>
     ${search}
     </div>
     ${list}
@@ -90,5 +93,18 @@ module.exports = {
     <input type="submit" value="Search">
   </form>`;
     return form;
+  },
+  sortForm: function (keys, request) {
+    var form = "";
+    var _url = request.url;
+    var queryData = url.parse(_url, true).query;
+    for (var i = 0, len = keys.length; i < len; i++) {
+      var selected = "";
+      if (keys[i].startsWith(queryData.sort)) selected = " selected";
+      form += `<option value="${keys[i]}"${selected}>${keys[i]}순</option>`;
+    }
+    return `<select name="sort" onChange="this.form.submit();">
+    ${form}
+    </select>`;
   },
 };

@@ -5,10 +5,15 @@ var qs = require("querystring");
 var sanitizeHTML = require("sanitize-html");
 
 exports.home = function (request, response) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var order = "";
+  if (queryData.sort !== undefined) order = `ORDER BY ${queryData.sort}`;
   db.query("SELECT * FROM topic", function (err, topics) {
     if (err) throw err;
-    db.query("SELECT * FROM author", function (err2, authors) {
+    db.query(`SELECT * FROM author ${order}`, function (err2, authors) {
       var title = "Author List";
+      var sort = template.sortForm(Object.keys(authors[0]), request);
       var table = `<table>
       <tr>
           <td>name</td>
@@ -35,7 +40,7 @@ exports.home = function (request, response) {
       <p><input type="submit" value="update"></p></form>`;
       var list = template.topicList(topics);
       var search = template.searchForm(request);
-      var html = template.html(title, search, list, control, body);
+      var html = template.html(title, sort, search, list, control, body);
       response.writeHead(200);
       response.end(html); // 최종적으로 전송할 데이터
     });
@@ -51,7 +56,7 @@ exports.search = function (request, response) {
       "SELECT * FROM author WHERE name like ?",
       [queryData.name + "%"],
       function (err2, authors) {
-        var title = "Author List";
+        var title = "Search Result";
         var table = `<table>
       <tr>
           <td>name</td>
@@ -75,10 +80,10 @@ exports.search = function (request, response) {
         var control = `<form action="/author/create_process" method="post">
       <p><input type="text" name="name" placeholder="name"></p>
       <p><textarea name="profile" placeholder="profile"></textarea></p>
-      <p><input type="submit" value="update"></p></form>`;
+      <p><input type="submit" value="create"></p></form>`;
         var list = template.topicList(topics);
         var search = template.searchForm(request);
-        var html = template.html(title, search, list, control, body);
+        var html = template.html(title, ``, search, list, control, body);
         response.writeHead(200);
         response.end(html); // 최종적으로 전송할 데이터
       }
@@ -112,9 +117,10 @@ exports.create__process = function (request, response) {
 exports.update = function (request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;
+
   db.query("SELECT * FROM topic", function (err, topics) {
     if (err) throw err;
-    db.query("SELECT * FROM author", function (err2, authors) {
+    db.query(`SELECT * FROM author`, function (err2, authors) {
       if (err2) throw err2;
       db.query("SELECT * FROM author WHERE id=?", [queryData.id], function (
         err3,
@@ -153,7 +159,7 @@ exports.update = function (request, response) {
         var body = `<h2>${title}</h2><p>${table}</p>`;
         var list = template.topicList(topics);
         var search = template.searchForm(request);
-        var html = template.html(title, search, list, control, body);
+        var html = template.html(title, ``, search, list, control, body);
         response.writeHead(200);
         response.end(html); // 최종적으로 전송할 데이터
       });

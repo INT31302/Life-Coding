@@ -7,7 +7,6 @@ var app = http.createServer(function (request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;
   var pathname = url.parse(_url, true).pathname;
-
   if (pathname === "/") {
     if (queryData.id === undefined) {
       topic.home(request, response);

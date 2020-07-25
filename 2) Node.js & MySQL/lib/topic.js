@@ -5,20 +5,27 @@ var qs = require("querystring");
 var sanitizeHTML = require("sanitize-html");
 
 exports.home = function (request, response) {
-  db.query("SELECT * FROM topic", function (err, topics) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var order = "";
+  if (queryData.sort !== undefined) order = `ORDER BY ${queryData.sort}`;
+  var temp = db.query(`SELECT * FROM topic ${order}`, function (err, topics) {
     if (err) throw err;
     var title = "Welcome";
     var description = "Hello, Node.js";
+    var sort = template.sortForm(Object.keys(topics[0]), request);
     var body = `<h2>${title}</h2><p>${description}</p>`;
     var list = template.topicList(topics);
     var search = template.searchForm(request);
     var html = template.html(
       title,
+      sort,
       search,
       list,
       body,
       `<a href="/create">create</a>`
     );
+    console.log(temp.sql);
     response.writeHead(200);
     response.end(html); // 최종적으로 전송할 데이터
   });
@@ -36,6 +43,7 @@ exports.page = function (request, response) {
         if (err2) throw err2;
         var title = topic[0].title;
         var description = topic[0].description;
+        var sort = template.sortForm(Object.keys(topics[0]), request);
         var list = template.topicList(topics);
         var search = template.searchForm(request);
         var body = `<h2>${sanitizeHTML(title)}</h2><p>${sanitizeHTML(
@@ -43,6 +51,7 @@ exports.page = function (request, response) {
         )}</p> by ${sanitizeHTML(topic[0].name)}`;
         var html = template.html(
           title,
+          sort,
           search,
           list,
           body,
@@ -63,7 +72,7 @@ exports.page = function (request, response) {
 exports.search = function (request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;
-  var sql = db.query(
+  db.query(
     `SELECT * FROM topic WHERE title LIKE ?`,
     [queryData.title + "%"],
     function (err, topics) {
@@ -72,7 +81,7 @@ exports.search = function (request, response) {
       var list = template.topicList(topics);
       var search = template.searchForm(request);
       var body = `<h2>${sanitizeHTML(title)}</h2>`;
-      var html = template.html(title, search, body, list, ``);
+      var html = template.html(title, ``, search, body, list, ``);
       response.writeHead(200);
       response.end(html); // 최종적으로 전송할 데이터
     }
@@ -80,15 +89,21 @@ exports.search = function (request, response) {
 };
 
 exports.create = function (request, response) {
-  db.query("SELECT * FROM topic", function (err, topics) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var order = "";
+  if (queryData.sort !== undefined) order = `ORDER BY ${queryData.sort}`;
+  db.query(`SELECT * FROM topic ${order}`, function (err, topics) {
     if (err) throw err;
     db.query("SELECT * FROM author", function (err2, authors) {
       if (err2) throw err2;
       var title = "Create";
+      var sort = template.sortForm(Object.keys(topics[0]), request);
       var list = template.topicList(topics);
       var search = template.searchForm(request);
       var html = template.html(
         title,
+        sort,
         search,
         list,
         `
@@ -135,7 +150,9 @@ exports.create__process = function (request, response) {
 exports.update = function (request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;
-  db.query("SELECT * FROM topic", function (err, topics) {
+  var order = "";
+  if (queryData.sort !== undefined) order = `ORDER BY ${queryData.sort}`;
+  db.query(`SELECT * FROM topic ${order}`, function (err, topics) {
     if (err) throw err;
     db.query("SELECT * FROM topic WHERE id=?", [queryData.id], function (
       err2,
@@ -145,9 +162,11 @@ exports.update = function (request, response) {
       db.query("SELECT*FROM author", function (err3, authors) {
         if (err3) throw err3;
         var list = template.topicList(topics);
+        var sort = template.sortForm(Object.keys(topics[0]), request);
         var search = template.searchForm(request);
         var html = template.html(
           sanitizeHTML(topic[0].title),
+          sort,
           search,
           list,
           `
