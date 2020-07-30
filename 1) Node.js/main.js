@@ -17,6 +17,7 @@ var app = http.createServer(function (request, response) {
         // 파일리스트 불러오기
         var title = "Welcome";
         var description = "Hello, Node.js";
+        var body = `<h2>${title}</h2><p>${description}</p>`;
         var list = template.list(filelist);
         var html = template.html(
           title,
@@ -82,7 +83,8 @@ var app = http.createServer(function (request, response) {
     request.on("end", function () {
       // 데이터 수신이 끝났을 경우 작동하는 이벤트
       var post = qs.parse(body);
-      var title = post.title;
+      var filteredTitle = path.parse(post.title).base;
+      var title = filteredTitle;
       var description = post.description;
 
       fs.writeFile(`./data/${title}`, description, "utf8", function (err) {
@@ -130,8 +132,10 @@ var app = http.createServer(function (request, response) {
     request.on("end", function () {
       // 데이터 수신이 끝났을 경우 작동하는 이벤트
       var post = qs.parse(body);
-      var id = post.id;
-      var title = post.title;
+      var filteredId = path.parse(post.id).base;
+      var filteredTitle = path.parse(post.title).base;
+      var id = filteredId;
+      var title = filteredTitle;
       var description = post.description;
       fs.rename(`data/${id}`, `data/${title}`, function (err) {
         fs.writeFile(`./data/${title}`, description, "utf8", function (err) {
