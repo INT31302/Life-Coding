@@ -6,6 +6,10 @@ const sanitizeHtml = require("sanitize-html");
 const template = require("../lib/template");
 
 router.get("/create", (req, res) => {
+  if (!req.session.is_logined) {
+    res.send('Login required!! <a href="/auth/login">go login</a>');
+    return false;
+  }
   // 파일리스트 불러오기
   var title = "WEB - create";
   var list = template.list(req.list);
@@ -18,7 +22,8 @@ router.get("/create", (req, res) => {
         <p><textarea name="description" placeholder="description"></textarea></p>
         <p><input type="submit"></p>
         `,
-    ``
+    ``,
+    template.authStatusUI(req)
   );
   res.send(html);
 });
@@ -37,6 +42,10 @@ router.post("/create", (req, res) => {
 });
 
 router.get("/update/:updateId", (req, res) => {
+  if (!req.session.is_logined) {
+    res.send('Login required!! <a href="/auth/login">go login</a>');
+    return false;
+  }
   // 파일리스트 불러오기
   const filteredId = path.parse(req.params.updateId).base;
   fs.readFile(`./data/${filteredId}`, "utf8", (err2, description) => {
@@ -58,22 +67,27 @@ router.get("/update/:updateId", (req, res) => {
             <input type="hidden" name="id" value="${title}">
             <input type="submit" value="delete">
           </form>`;
-    const html = template.html(title, list, body, control);
+    const html = template.html(
+      title,
+      list,
+      body,
+      control,
+      template.authStatusUI(req)
+    );
     res.send(html);
   });
 });
 
 router.post("/update", (req, res) => {
-  // 데이터 수신이 끝났을 경우 작동하는 이벤트
   const post = req.body;
   const filteredId = path.parse(post.id).base;
   const filteredTitle = path.parse(post.title).base;
   let id = filteredId;
   let title = filteredTitle;
   let description = post.description;
-  fs.rename(`../data/${id}`, `../data/${title}`, (err) => {
+  fs.rename(`./data/${id}`, `./data/${title}`, (err) => {
     if (err) throw err;
-    fs.writeFile(`../data/${title}`, description, "utf8", (err2) => {
+    fs.writeFile(`./data/${title}`, description, "utf8", (err2) => {
       if (err2) throw err2;
       console.log("The file has been saved");
       res.redirect(`/topic/${title}`);
@@ -82,6 +96,10 @@ router.post("/update", (req, res) => {
 });
 
 router.post("/delete", (req, res) => {
+  if (!req.session.is_logined) {
+    res.send('Login required!! <a href="/auth/login">go login</a>');
+    return false;
+  }
   const post = req.body;
   let id = post.id;
   let filteredId = path.parse(id).base;
@@ -110,7 +128,8 @@ router.get("/:pageId", (req, res, next) => {
     <form action="/topic/delete" method="post">
     <input type="hidden" name="id" value="${sanitizedTitle}">
     <input type="submit" value="delete">
-    </form>`
+    </form>`,
+        template.authStatusUI(req)
       );
       res.send(html);
     }

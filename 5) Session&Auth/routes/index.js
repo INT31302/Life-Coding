@@ -13,7 +13,8 @@ router.get("/", (req, res) => {
     title,
     list,
     body,
-    `<a href="/topic/create">create</a>`
+    `<a href="/topic/create">create</a>`,
+    template.authStatusUI(req)
   );
   res.send(html);
 });

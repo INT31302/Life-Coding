@@ -17,6 +17,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "helmet": "^3.23.3",
-    "sanitize-html": "^1.27.1"
+    "sanitize-html": "^1.27.1",
+    "session-file-store": "^1.4.0"
   }
 }

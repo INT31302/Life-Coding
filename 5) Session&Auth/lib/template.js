@@ -1,6 +1,11 @@
-module.exports = {
-  html: function (title, list, body, control) {
-    return `
+exports.html = (
+  title,
+  list,
+  body,
+  control,
+  authStatusUI = '<a href="/login">login</a>'
+) => {
+  return `
     <!doctype html>
   <html>
   <head>
@@ -8,20 +13,29 @@ module.exports = {
     <meta charset="utf-8">
   </head>
   <body>
-    <h1><a href="/">WEB</a></h1>
+  <h1><a href="/">WEB</a></h1>
+  ${authStatusUI}
     ${list}
     ${control}
     ${body}
   </body>
   </html>
     `;
-  },
-  list: function (filelist) {
-    var list = "<ul>";
-    for (var i = 0; i < filelist.length; i++) {
-      list += `<li><a href="/topic/${filelist[i]}">${filelist[i]}</a></li>`;
-    }
-    list += "</ul>";
-    return list;
-  },
+};
+
+exports.list = (filelist) => {
+  var list = "<ul>";
+  for (var i = 0; i < filelist.length; i++) {
+    list += `<li><a href="/topic/${filelist[i]}">${filelist[i]}</a></li>`;
+  }
+  list += "</ul>";
+  return list;
+};
+
+exports.authStatusUI = (req) => {
+  if (req.session.is_logined) {
+    return `${req.session.nickname} | <a href="/auth/logout">logout</a>`;
+  } else {
+    return '<a href="/auth/login">login</a>';
+  }
 };
