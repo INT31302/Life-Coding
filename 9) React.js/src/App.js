@@ -1,8 +1,10 @@
 import React, { Component } from "react";
 import Subject from "./components/Subject";
 import TOC from "./components/TOC";
-import Content from "./components/Content";
+import ReadContent from "./components/ReadContent";
+import Control from "./components/Control";
 import "./App.css";
+import CreateContent from "./components/CreateContent";
 
 class App extends Component {
   constructor(props) {
@@ -33,14 +35,21 @@ class App extends Component {
   }
   render() {
     let _title,
-      _desc = null;
+      _desc,
+      _article = null;
     if (this.state.mode === "welcome") {
       _title = this.state.welcome.title;
       _desc = this.state.welcome.desc;
+      _article = <ReadContent title={_title} desc={_desc}></ReadContent>;
     } else if (this.state.mode === "read") {
       const index = this.state.selected_content_id - 1;
       _title = this.state.contents[index].title;
       _desc = this.state.contents[index].desc;
+      _article = <ReadContent title={_title} desc={_desc}></ReadContent>;
+    } else if (this.state.mode === "create") {
+      _article = (
+        <CreateContent onSubmit={(_title, _desc) => {}}></CreateContent>
+      );
     }
     return (
       <div className="App">
@@ -60,7 +69,12 @@ class App extends Component {
             });
           }}
         ></TOC>
-        <Content title={_title} desc={_desc}></Content>
+        <Control
+          onChangeMode={(_mode) => {
+            this.setState({ mode: _mode });
+          }}
+        ></Control>
+        {_article}
       </div>
     );
   }
